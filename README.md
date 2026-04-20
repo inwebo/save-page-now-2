@@ -1,13 +1,13 @@
 # save-page-now-2
 
-PHP 8.2+ client library for the **Save Page Now 2 (SPN2) API** provided by the [Internet Archive Wayback Machine](https://web.archive.org/save).
+PHP 8.1+ client library for the **Save Page Now 2 (SPN2) API** provided by the [Internet Archive](https://wayback-api.archive.org/save).
 
-## Documentation officielle
+## Official Documentation
 
-- [Google Doc (Vangelis Banos, Internet Archive)](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)  ← référence la plus complète
-- [Gist miroir lisible](https://gist.github.com/regstuff/82e690db2f1d91ba59f6681c1abad6cf)
+- [Google Doc (Vangelis Banos, Internet Archive)](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)  ← Most comprehensive reference
+- [Readable Mirror Gist](https://gist.github.com/regstuff/82e690db2f1d91ba59f6681c1abad6cf)
 
----
+-----
 
 ## Installation
 
@@ -15,11 +15,11 @@ PHP 8.2+ client library for the **Save Page Now 2 (SPN2) API** provided by the [
 composer require inwebo/save-page-now-2
 ```
 
-Obtenez vos clés S3 sur <https://archive.org/account/s3.php>.
+Obtain your S3 API keys at [https://archive.org/account/s3.php](https://archive.org/account/s3.php).
 
----
+-----
 
-## Utilisation rapide
+## Quick Start
 
 ```php
 use Inwebo\SavePageNow2\Auth\S3Credentials;
@@ -33,117 +33,117 @@ $client = new SavePageNow2Client(
     new S3Credentials('my-access-key', 'my-secret'),
 );
 
-// 1. Soumettre une URL
+// 1. Submit a URL
 $options = (new CaptureOptionsBuilder())
-    ->withSkipFirstArchive()   // plus rapide
-    ->withJsBehaviorTimeout(0) // page sans JS
+    ->withSkipFirstArchive()   // Faster
+    ->withJsBehaviorTimeout(0) // No JS execution
     ->build();
 
 $job = $client->capture('https://example.com/', $options);
-echo "Job démarré : {$job->jobId}\n";
+echo "Job started: {$job->jobId}\n";
 
-// 2. Polling jusqu'à la fin
+// 2. Poll until completion
 do {
     sleep(5);
     $status = $client->getStatus($job->jobId);
 } while ($status->getStatus() === JobStatus::Pending);
 
-// 3. Résultat
+// 3. Result
 if ($status->getStatus() === JobStatus::Success) {
-    echo "✅ Archivé : {$status->getWaybackUrl()}\n";
+    echo "✅ Archived: {$status->getWaybackUrl()}\n";
 } else {
-    echo "❌ Erreur : {$status->getMessage()} ({$status->getStatusExt()})\n";
+    echo "❌ Error: {$status->getMessage()} ({$status->getStatusExt()})\n";
 }
 ```
 
----
+-----
 
 ## Architecture
 
 ```
 src/
 ├── Auth/
-│   ├── AuthInterface.php          Interface générique d'authentification
-│   ├── S3Credentials.php          Authorization: LOW key:secret  (recommandé)
+│   ├── AuthInterface.php          Generic authentication interface
+│   ├── S3Credentials.php          Authorization: LOW key:secret (recommended)
 │   └── CookieCredentials.php      logged-in-user + logged-in-sig (fallback)
 │
 ├── Capture/
-│   ├── CaptureOptions.php         Value object readonly — tous les paramètres POST
-│   └── CaptureOptionsBuilder.php  Fluent builder immutable
+│   ├── CaptureOptions.php         Readonly Value object — all POST parameters
+│   └── CaptureOptionsBuilder.php  Immutable fluent builder
 │
 ├── Response/
 │   ├── JobStatus.php              Enum: Pending | Success | Error
-│   ├── CaptureJobResponse.php     Réponse du POST /save  {url, job_id}
-│   ├── UserStatusResponse.php     GET /save/status/user  {available, processing}
+│   ├── CaptureJobResponse.php     POST /save response {url, job_id}
+│   ├── UserStatusResponse.php     GET /save/status/user {available, processing}
 │   ├── SystemStatusResponse.php   GET /save/status/system {status}
 │   └── Status/
 │       ├── StatusResponseInterface.php
-│       ├── StatusResponseFactory.php   Dispatch json → bonne implémentation
+│       ├── StatusResponseFactory.php   Dispatches JSON → correct implementation
 │       ├── PendingStatusResponse.php
 │       ├── SuccessStatusResponse.php   + getWaybackUrl()
 │       └── ErrorStatusResponse.php     + getStatusExt(), getMessage()
 │
 ├── Exception/
-│   ├── SavePageNowException.php       Base
-│   ├── ApiException.php               Réponse inattendue / malformée
+│   ├── SavePageNowException.php       Base exception
+│   ├── ApiException.php               Unexpected / malformed response
 │   ├── AuthenticationException.php    HTTP 401 / error:unauthorized
 │   ├── UserSessionLimitException.php  error:user-session-limit
-│   └── NetworkException.php           Erreur de transport Symfony
+│   └── NetworkException.php           Symfony transport error
 │
-├── SavePageNow2Interface.php      Contrat public du client
-└── SavePageNow2Client.php         Implémentation Symfony HttpClient
+├── SavePageNow2Interface.php      Public client contract
+└── SavePageNow2Client.php         Symfony HttpClient implementation
 ```
 
----
+-----
 
-## API complète
+## Complete API
 
 ### `capture(string $url, ?CaptureOptions $options = null): CaptureJobResponse`
 
-Soumet une URL pour archivage. Retourne immédiatement un `job_id`.
+Submits a URL for archiving. Returns a `job_id` immediately.
 
 ### `getStatus(string $jobId): StatusResponseInterface`
 
-Retourne `PendingStatusResponse`, `SuccessStatusResponse` ou `ErrorStatusResponse`.
+Returns a `PendingStatusResponse`, `SuccessStatusResponse`, or `ErrorStatusResponse`.
 
 ### `getStatuses(array $jobIds): array<string, StatusResponseInterface>`
 
-Statuts de plusieurs jobs en une seule requête.
+Retrieves the status of multiple jobs in a single request.
 
 ### `getOutlinksStatus(string $parentJobId): array<string, StatusResponseInterface>`
 
-Statuts de tous les outlinks d'un job parent (nécessite `capture_outlinks=1`).
+Retrieves the status of all outlinks for a parent job (requires `capture_outlinks=1`).
 
 ### `getUserStatus(): UserStatusResponse`
 
-Sessions actives et disponibles pour l'utilisateur authentifié.
+Active and available sessions for the authenticated user.
 
 ### `getSystemStatus(): SystemStatusResponse`
 
-Santé globale du service SPN2.
+Overall health of the SPN2 service.
 
----
+-----
 
-## Options de capture
+## Capture Options
 
-| Builder method                          | Paramètre API             | Description |
+| Builder method                          | API Parameter             | Description |
 |-----------------------------------------|---------------------------|-------------|
-| `withCaptureAll()`                      | `capture_all=1`           | Capture aussi les pages 4xx/5xx |
-| `withCaptureOutlinks()`                 | `capture_outlinks=1`      | Archive automatiquement les outlinks |
-| `withCaptureScreenshot()`               | `capture_screenshot=1`    | Capture un screenshot PNG pleine page |
-| `withDelayWbAvailability()`             | `delay_wb_availability=1` | Disponible dans ~12 h (réduit la charge) |
-| `withForceGet()`                        | `force_get=1`             | Force un GET simple (pas de headless) |
-| `withSkipFirstArchive()`                | `skip_first_archive=1`    | Skip le check "premier archivage" (plus rapide) |
-| `withIfNotArchivedWithin(string)`       | `if_not_archived_within`  | N'archive que si plus ancien que `"3d 5h"` |
-| `withOutlinksAvailability()`            | `outlinks_availability=1` | Retourne le timestamp du dernier snapshot de chaque outlink |
-| `withEmailResult()`                     | `email_result=1`          | Envoie un rapport par email |
-| `withJsBehaviorTimeout(int $s)`         | `js_behavior_timeout=N`   | Temps JS après chargement (0–30 s) |
-| `withCaptureCookie(string)`             | `capture_cookie`          | Cookie HTTP supplémentaire pour la cible |
-| `withTargetCredentials(string, string)` | `target_username/password`| Credentials pour les formulaires de la cible |
+| `withCaptureAll()`                      | `capture_all=1`           | Also captures 4xx/5xx pages |
+| `withCaptureOutlinks()`                 | `capture_outlinks=1`      | Automatically archives outlinks |
+| `withCaptureScreenshot()`               | `capture_screenshot=1`    | Captures a full-page PNG screenshot |
+| `withDelayWbAvailability()`             | `delay_wb_availability=1` | Available in \~12h (reduces server load) |
+| `withForceGet()`                        | `force_get=1`             | Forces a simple GET (no headless browser) |
+| `withSkipFirstArchive()`                | `skip_first_archive=1`    | Skips the "first archive" check (faster) |
+| `withIfNotArchivedWithin(string)`       | `if_not_archived_within`  | Only archives if older than e.g., `"3d 5h"` |
+| `withOutlinksAvailability()`            | `outlinks_availability=1` | Returns the last snapshot timestamp for each outlink |
+| `withEmailResult()`                     | `email_result=1`          | Sends an email report |
+| `withJsBehaviorTimeout(int $s)`         | `js_behavior_timeout=N`   | JS execution time after loading (0–30s) |
+| `withCaptureCookie(string)`             | `capture_cookie`          | Additional HTTP cookie for the target |
+| `withTargetCredentials(string, string)` | `target_username/password`| Credentials for the target's auth forms |
 
----
+-----
 
-## Gestion des erreurs
+## Error Handling
 
 ```php
 use Inwebo\SavePageNow2\Exception\AuthenticationException;
@@ -154,45 +154,37 @@ use Inwebo\SavePageNow2\Exception\ApiException;
 try {
     $job = $client->capture('https://example.com/');
 } catch (AuthenticationException $e) {
-    // Clés S3 invalides ou expirées
+    // Invalid or expired S3 keys
 } catch (UserSessionLimitException $e) {
-    // 12 captures simultanées atteintes (authentifié) / 6 (anonyme)
+    // 12 simultaneous captures reached (auth) / 6 (anonymous)
 } catch (NetworkException $e) {
-    // Problème de transport (timeout, DNS…)
+    // Transport issue (timeout, DNS...)
 } catch (ApiException $e) {
-    // Réponse inattendue de l'API
+    // Unexpected API response
 }
 ```
 
-Les codes d'erreur `status_ext` (ex: `error:not-found`, `error:too-many-daily-captures`) sont
-disponibles sur `ErrorStatusResponse::getStatusExt()`.
+Detailed error codes from `status_ext` (e.g., `error:not-found`, `error:too-many-daily-captures`) are available via `ErrorStatusResponse::getStatusExt()`.
 
----
+-----
 
-## Tests
+## Testing
 
-Avec PHPUnit installé via Composer :
-
-```bash
-composer install
-./vendor/bin/phpunit
-```
-
-Sans Composer (runner autonome inclus dans le repo) :
+Run tests using the included PHPUnit runner:
 
 ```bash
-php run-tests.php
+composer phpunit
 ```
 
 ```
 Save Page Now 2 — Test Suite
 ========================================
-..........................................................................................
-58 tests, 58 passed, 0 failed
+..................................................... 53 / 53
+OK (53 tests, 97 assertions)
 ```
 
----
+-----
 
-## Licence
+## License
 
-GPL-3.0-or-later
+MIT

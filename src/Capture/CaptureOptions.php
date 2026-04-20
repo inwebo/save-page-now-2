@@ -27,6 +27,8 @@ final class CaptureOptions
      * @param string|null $captureCookie        extra Cookie header sent when fetching the target URL
      * @param string|null $targetUsername       username for target-page login forms
      * @param string|null $targetPassword       password for target-page login forms
+     *
+     * @todo wm-save-mywebarchive "on" Save also in my web archive
      */
     public function __construct(
         public readonly bool $captureAll = false,
@@ -49,7 +51,7 @@ final class CaptureOptions
     }
 
     /**
-     * Serialises options to the POST body array expected by the SPN2 API.
+     * Serializes options to the POST body array expected by the SPN2 API.
      *
      * @return array<string, string|int>
      */

@@ -20,6 +20,7 @@ use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 /**
  * Symfony HttpClient implementation of the SPN2 client.
@@ -162,8 +163,9 @@ final class SavePageNow2Client implements SavePageNow2Interface
 
     /**
      * @return array<string, mixed>
+     * @throws TransportExceptionInterface
      */
-    private function decodeResponse(\Symfony\Contracts\HttpClient\ResponseInterface $response): array
+    private function decodeResponse(ResponseInterface $response): array
     {
         try {
             $statusCode = $response->getStatusCode();
@@ -212,7 +214,7 @@ final class SavePageNow2Client implements SavePageNow2Interface
             }
             // Ensure the nested payload carries the job_id
             $jobData['job_id'] ??= $jobId;
-            $result[(string) $jobId] = StatusResponseFactory::fromArray($jobData);
+            $result[$jobId] = StatusResponseFactory::fromArray($jobData);
         }
 
         return $result;

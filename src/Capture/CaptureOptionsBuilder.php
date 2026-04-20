@@ -30,6 +30,9 @@ final class CaptureOptionsBuilder
     private ?string $targetUsername = null;
     private ?string $targetPassword = null;
 
+    /**
+     * Capture a web page with errors (HTTP status=4xx or 5xx). By default, SPN2 captures only status=200 URLs.
+     */
     public function withCaptureAll(bool $value = true): self
     {
         $clone = clone $this;
@@ -37,7 +40,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Capture web page outlinks automatically. This also applies to PDF, JSON, RSS, and MRSS feeds.
+     */
     public function withCaptureOutlinks(bool $value = true): self
     {
         $clone = clone $this;
@@ -45,7 +50,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Capture full page screenshot in PNG format. This is also stored in the Wayback Machine as a different capture.
+     */
     public function withCaptureScreenshot(bool $value = true): self
     {
         $clone = clone $this;
@@ -53,7 +60,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * The capture becomes available in the Wayback Machine after ~12 hours instead of immediately. This option helps reduce the load on our systems. All API responses remain exactly the same when using this option.
+     */
     public function withDelayWbAvailability(bool $value = true): self
     {
         $clone = clone $this;
@@ -61,7 +70,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Force the use of a simple HTTP GET request to capture the target URL. By default, SPN2 does an HTTP HEAD on the target URL to decide whether to use a headless browser or a simple HTTP GET request. Option force_get overrides this behavior.
+     */
     public function withForceGet(bool $value = true): self
     {
         $clone = clone $this;
@@ -69,7 +80,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Skip checking if a capture is a first if you don’t need this information. This will make captures run faster.
+     */
     public function withSkipFirstArchive(bool $value = true): self
     {
         $clone = clone $this;
@@ -77,15 +90,21 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
-    public function withIfNotArchivedWithin(string $timedelta): self
+    /**
+     * Capture web page only if the latest existing capture at the Archive is older than the <timedelta> limit.  Its format could be any datetime expression like “3d 5h 20m” or just a number of seconds, e.g. “120”. If there is a capture within the defined timedelta, SPN2 returns that as a recent capture. The default system <timedelta> is 45 min.
+     *
+     * When using 2 comma-separated <timedelta> values, the first one applies to the main capture and the second one applies to outlinks
+     */
+    public function withIfNotArchivedWithin(string $timeDelta): self
     {
         $clone = clone $this;
-        $clone->ifNotArchivedWithin = $timedelta;
+        $clone->ifNotArchivedWithin = $timeDelta;
 
         return $clone;
     }
-
+    /**
+     * Return the timestamp of the last capture for all outlinks.
+     */
     public function withOutlinksAvailability(bool $value = true): self
     {
         $clone = clone $this;
@@ -93,7 +112,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Send an email report of the captured URLs to the user’s email.
+     */
     public function withEmailResult(bool $value = true): self
     {
         $clone = clone $this;
@@ -112,7 +133,9 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Use extra HTTP Cookie value when capturing the target page.
+     */
     public function withCaptureCookie(string $cookie): self
     {
         $clone = clone $this;
@@ -120,7 +143,10 @@ final class CaptureOptionsBuilder
 
         return $clone;
     }
-
+    /**
+     * Use your own username in the target page’s login forms.
+     * Use your own password in the target page’s login forms.
+     */
     public function withTargetCredentials(string $username, string $password): self
     {
         $clone = clone $this;
